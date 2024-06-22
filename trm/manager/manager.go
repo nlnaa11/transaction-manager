@@ -34,7 +34,7 @@ func (m *trManager) DoWithConfig(ctx context.Context, config trm.Config, fn func
 		return err
 	}
 
-	defer func() { err = closer(ctx, err) }()
+	defer func() { err = closer(ctx, recover(), &err) }()
 
 	return fn(ctx)
 }

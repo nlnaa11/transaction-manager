@@ -5,10 +5,9 @@ import "context"
 type TrType int32
 
 const (
-	IncorrectTr TrType = iota
-	NestedIndependentTr
-	PseudoNestedTr
-	NestedSubTr
+	IndependentTransaction TrType = 1 << iota
+	NestedTransaction
+	NoTransaction
 )
 
 type TrFactory func(context.Context, Config) (context.Context, Transaction, error)
