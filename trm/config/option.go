@@ -21,3 +21,11 @@ func WithTimeout(timeout time.Duration) Opt {
 		return nil
 	}
 }
+
+func WithCancellable(cancellable bool) Opt {
+	return func(c *config) error {
+		*c = c.setCancellable(cancellable)
+
+		return nil
+	}
+}

@@ -2,9 +2,9 @@ package manager
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nlnaa11/transaction-manager/trm"
+	"go.uber.org/multierr"
 )
 
 type TrCloser func(context.Context, interface{}, *error) error
@@ -22,7 +22,7 @@ func (m *trManager) independentTransaction(ctx context.Context, config trm.Confi
 
 	ctx, tr, err := m.trFactory(ctx, config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("can't create new independent transaction: %w", err)
+		return nil, nil, multierr.Combine(trm.ErrBegin, err)
 	}
 
 	return m.ctxManager.SetByKey(ctx, config.CtxKey, tr),
@@ -37,7 +37,7 @@ func (m *trManager) nestedTransaction(ctx context.Context, config trm.Config) (c
 	if tr == nil {
 		ctx, tr, err := m.trFactory(ctx, config)
 		if err != nil {
-			return nil, nil, fmt.Errorf("can't create new transaction: %w", err)
+			return nil, nil, multierr.Combine(trm.ErrBegin, err)
 		}
 
 		return m.ctxManager.SetByKey(ctx, config.CtxKey, tr),
@@ -48,7 +48,7 @@ func (m *trManager) nestedTransaction(ctx context.Context, config trm.Config) (c
 	if nestedFactory, ok := tr.(trm.NestedTrFactory); ok {
 		ctx, tr, err := nestedFactory.Begin(ctx, config)
 		if err != nil {
-			return nil, nil, fmt.Errorf("can't begin pseudo nested transaction: %w", err)
+			return nil, nil, multierr.Combine(trm.ErrNestedBegin, err)
 		}
 
 		return m.ctxManager.SetByKey(ctx, config.CtxKey(), tr),
@@ -77,5 +77,11 @@ func (m *trManager) withCancel(ctx context.Context, config trm.Config) (context.
 		return context.WithTimeout(ctx, t)
 	}
 
-	return context.WithCancel(ctx)
+	if config.Cancellable() {
+		return context.WithCancel(ctx)
+	}
+
+	return context.WithoutCancel(ctx), nilCancelFunc
 }
+
+func nilCancelFunc() {}

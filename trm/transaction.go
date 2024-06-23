@@ -1,11 +1,16 @@
 package trm
 
-import "context"
+import (
+	"context"
+	"errors"
+	"fmt"
+)
 
-type TrType int32
+type TrType int8
 
 const (
-	IndependentTransaction TrType = 1 << iota
+	IncorrectTrType TrType = iota
+	IndependentTransaction
 	NestedTransaction
 	NoTransaction
 )
@@ -19,8 +24,21 @@ type NestedTrFactory interface {
 type Transaction interface {
 	Transaction() interface{}
 
-	Commit() error
-	Rollback() error
+	Commit(context.Context) error
+	Rollback(context.Context) error
 
-	Close()
+	IsActive() bool
+	//Close()
 }
+
+var (
+	ErrAlreadyClosed = errors.New("transaction already closed")
+
+	ErrBegin    = errors.New("transaction begin")
+	ErrRollback = errors.New("transaction rollback")
+	ErrCommit   = errors.New("transaction commit")
+
+	ErrNestedBegin    = fmt.Errorf("nested %w", ErrBegin)
+	ErrNestedRollback = fmt.Errorf("nested %w", ErrRollback)
+	ErrNestedCommit   = fmt.Errorf("nested %w", ErrCommit)
+)

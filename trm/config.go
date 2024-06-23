@@ -11,6 +11,10 @@ type Config interface {
 	TimeoutWithFlag() (time.Duration, bool)
 	SetTimeout(time.Duration) Config
 
+	Cancellable() bool
+	CancellableWithFlag() (bool, bool)
+	SetCancellable(bool) Config
+
 	TransactionType() TrType
 	SetTransactionType(typ TrType) Config
 

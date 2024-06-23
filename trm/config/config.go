@@ -8,23 +8,35 @@ import (
 
 type ctxKey struct{}
 
+var DefaultCtxKey = ctxKey{}
+
+type SetUpCancel int8
+
+const (
+	IncorrectSetUpCancel SetUpCancel = iota
+	Cancellable
+	NonCancellable
+)
+
 var (
-	DefaultCtxKey = ctxKey{}
+	defaultCancellability = IncorrectSetUpCancel
 )
 
 type config struct {
 	ctxKey trm.CtxKey
 	trType trm.TrType
 
-	timeout time.Duration
+	timeout        time.Duration
+	cancellability SetUpCancel
 }
 
 type Opt func(c *config) error
 
 func NewTrConfig(trType trm.TrType, oo ...Opt) (config, error) {
 	c := &config{
-		trType: trType,
-		ctxKey: DefaultCtxKey,
+		trType:         trType,
+		ctxKey:         DefaultCtxKey,
+		cancellability: defaultCancellability,
 	}
 
 	for _, o := range oo {
@@ -50,7 +62,7 @@ func (c config) CtxKey() trm.CtxKey {
 }
 
 func (c config) CtxKeyWithFlag() (trm.CtxKey, bool) {
-	return c.ctxKey, c.ctxKey != DefaultCtxKey
+	return c.CtxKey(), c.ctxKey != DefaultCtxKey
 }
 
 func (c config) SetCtxKey(key trm.CtxKey) trm.Config {
@@ -68,7 +80,7 @@ func (c config) Timeout() time.Duration {
 }
 
 func (c config) TimeoutWithFlag() (time.Duration, bool) {
-	return c.timeout, c.timeout != 0
+	return c.Timeout(), c.timeout != 0
 }
 
 func (c config) SetTimeout(timeout time.Duration) trm.Config {
@@ -77,6 +89,28 @@ func (c config) SetTimeout(timeout time.Duration) trm.Config {
 
 func (c config) setTimeout(timeout time.Duration) config {
 	c.timeout = timeout
+
+	return c
+}
+
+func (c config) Cancellable() bool {
+	return c.cancellability == Cancellable
+}
+
+func (c config) CancellableWithFlag() (bool, bool) {
+	return c.Cancellable(), c.cancellability != IncorrectSetUpCancel
+}
+
+func (c config) SetCancellable(cancellable bool) trm.Config {
+	return c.setCancellable(cancellable)
+}
+
+func (c config) setCancellable(cancellabe bool) config {
+	if cancellabe {
+		c.cancellability = Cancellable
+	} else {
+		c.cancellability = NonCancellable
+	}
 
 	return c
 }
@@ -99,6 +133,9 @@ func (c config) InheritFrom(external trm.Config) (res trm.Config) {
 	}
 	if t, ok := c.TimeoutWithFlag(); !ok || t > external.Timeout() {
 		res = res.SetTimeout(external.Timeout())
+	}
+	if _, ok := c.CancellableWithFlag(); !ok {
+		res = res.SetCancellable(external.Cancellable())
 	}
 
 	return res

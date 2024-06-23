@@ -40,8 +40,8 @@ func (m *trManager) DoWithConfig(ctx context.Context, config trm.Config, fn func
 }
 
 func (m *trManager) initTransaction(ctx context.Context, config trm.Config) (context.Context, TrCloser, error) {
-	if initTr, ok := initByTrType[config.TransactionType()]; ok {
-		return initTr(m, ctx, config)
+	if initFn, ok := initByTrType[config.TransactionType()]; ok {
+		return initFn(m, ctx, config)
 	}
 
 	return nil, nil, errors.New("invalid transaction type")
