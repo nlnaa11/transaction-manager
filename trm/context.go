@@ -1,10 +1,14 @@
 package trm
 
+//go:generate mockgen -source=$GOFILE -destination=drivers/mock/$GOFILE -package mock
+
 import (
 	"context"
 )
 
 type CtxKey interface{}
+
+type TrProvider func(ctx context.Context) Transaction
 
 type CtxManager interface {
 	Default(ctx context.Context) Transaction

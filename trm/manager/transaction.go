@@ -20,7 +20,7 @@ var initByTrType = map[trm.TrType]InitTr{
 func (m *trManager) independentTransaction(ctx context.Context, config trm.Config) (context.Context, TrCloser, error) {
 	ctx, cancel := m.withCancel(ctx, config)
 
-	ctx, tr, err := m.trFactory(ctx, config)
+	ctx, tr, err := m.trFactory.BeginTx(ctx, config)
 	if err != nil {
 		return nil, nil, multierr.Combine(trm.ErrBegin, err)
 	}
@@ -35,7 +35,7 @@ func (m *trManager) nestedTransaction(ctx context.Context, config trm.Config) (c
 	ctx, cancel := m.withCancel(ctx, config)
 
 	if tr == nil {
-		ctx, tr, err := m.trFactory(ctx, config)
+		ctx, tr, err := m.trFactory.BeginTx(ctx, config)
 		if err != nil {
 			return nil, nil, multierr.Combine(trm.ErrBegin, err)
 		}

@@ -1,5 +1,7 @@
 package trm
 
+//go:generate mockgen -source=$GOFILE -destination=drivers/mock/$GOFILE -package mock
+
 import (
 	"context"
 )

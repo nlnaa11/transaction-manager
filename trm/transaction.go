@@ -1,5 +1,7 @@
 package trm
 
+//go:generate mockgen -source=$GOFILE -destination=drivers/mock/$GOFILE -package mock
+
 import (
 	"context"
 	"errors"
@@ -15,7 +17,9 @@ const (
 	NoTransaction
 )
 
-type TrFactory func(context.Context, Config) (context.Context, Transaction, error)
+type TrFactory interface {
+	BeginTx(context.Context, Config) (context.Context, Transaction, error)
+}
 
 type NestedTrFactory interface {
 	Begin(context.Context, Config) (context.Context, Transaction, error)
@@ -28,7 +32,6 @@ type Transaction interface {
 	Rollback(context.Context) error
 
 	IsActive() bool
-	//Close()
 }
 
 var (
